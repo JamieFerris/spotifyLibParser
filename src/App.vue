@@ -3,7 +3,7 @@
     <h1>spotifyLibParser</h1>
     <div v-if="loggedIn">
       <div>Hello, username</div>
-      <button>logout</button>
+      <button @click="handleLogout">logout</button>
     </div>
     <div v-else>
       <button @click="handleLogin">login</button>
@@ -47,6 +47,12 @@ export default {
         return result;
       }, {});
     },
+    handleLogout() {
+      localStorage.setItem('access_token', '');
+      localStorage.setItem('login_status', '');
+      this.loggedIn = false;
+      this.access_token = '';
+    }
 
   },
   //handling login status
