@@ -2,8 +2,15 @@
   <div class="header">
     <h1>spotifyLibParser</h1>
     <div v-if="loggedIn">
-      <div>Hello, username</div>
-      <button @click="handleLogout">logout</button>
+      <div class="nav_wrapper">
+        <img :src="profile_img" class="avatar">
+        <div>
+          <div>Hello, {{ username }}</div>
+          <button @click="handleLogout" class="my_btn">logout</button>
+        </div>
+      </div>
+
+      
     </div>
     <div v-else>
       <button @click="handleLogin">login</button>
@@ -18,6 +25,12 @@ export default {
     loggedIn: {
       type: Boolean,
       required: true
+    },
+    username: {
+      type: String
+    },
+    profile_img: {
+      type: String
     }
   },
   methods: {
@@ -36,10 +49,10 @@ export default {
       }).join('');
       localStorage.setItem('state_param', state.toString());
       localStorage.setItem('login_status', 'redirected')
-      window.location = `${SPOTIFY_AUTHORIZE_ENDPOINT}?client_id=${CLIENT_ID}&response_type=code&redirect_uri=${REDIRECT_URI}&state=${state}&scope=${SCOPES_PARAM}&show_dialog=true`;
+      window.location = `${SPOTIFY_AUTHORIZE_ENDPOINT}?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${REDIRECT_URI}&state=${state}&scope=${SCOPES_PARAM}&show_dialog=true`;
     },
     getParamsFromAuth(href) {
-      const paramsString = href.split('?')[1];
+      const paramsString = href.split('#')[1];
       return paramsString.split('&').reduce((result, currentValue) => {
         const [key, value] = currentValue.split('=');
         result[key] = value;
@@ -47,8 +60,7 @@ export default {
       }, {});
     },
     handleLogout() {
-      localStorage.setItem('access_token', '');
-      localStorage.setItem('login_status', '');
+      localStorage.clear()
       this.$emit('login_status_change', {loggedIn:false, access_token: ''})
     },
     handleLoginStatus() {
@@ -56,11 +68,14 @@ export default {
         const params = this.getParamsFromAuth(window.location.href);
         const generated_state = localStorage.getItem('state_param')
         if (params.state === generated_state) {
-          localStorage.setItem('access_token', params.code);
+          localStorage.setItem('access_token', params.access_token);
           localStorage.setItem('login_status', 'logged_in');
+          localStorage.setItem('token_expires_at', (Date.now() + parseInt(params.expires_in)*1000).toString())
           this.$emit('login_status_change', {loggedIn:true, access_token: params.code})
         }
         window.location.href = window.location.origin;
+      } else {
+        if (parseInt(localStorage.getItem('token_expires_at')) < Date.now()) this.handleLogout();
       }
     },
 
@@ -76,6 +91,19 @@ export default {
   .header {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+  }
+  .avatar {
+    border-radius: 50%;
+    height: 50px;
+    width: 50px;
+  }
+  .my_btn {
+    width: 100%;
+  }
+  .nav_wrapper {
+    display: flex;
+    flex-direction: row;
     align-items: center;
   }
 </style>
